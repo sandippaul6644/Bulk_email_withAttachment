@@ -5,6 +5,14 @@ const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
 const { validate } = require("email-validator");
 const fs = require("fs");
+const path = require("path");
+
+const reportsFolder = path.join(__dirname, "reports");
+
+// Create the reports folder if it doesn't exist
+if (!fs.existsSync(reportsFolder)) {
+  fs.mkdirSync(reportsFolder);
+}
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -23,7 +31,8 @@ app.post("/mail", async (req, res, next) => {
   try {
     // Generate a unique filename using the current timestamp
     const timestamp = new Date().toISOString().replace(/:/g, "-");
-    const reportFilePath = __dirname + `/email_report_${timestamp}.csv`;
+    const reportFileName = `email_report_${timestamp}.csv`;
+    const reportFilePath = path.join(reportsFolder, reportFileName);
 
     const reportFileStream = fs.createWriteStream(reportFilePath);
     reportFileStream.write("Email,Status\n"); // Header for CSV
