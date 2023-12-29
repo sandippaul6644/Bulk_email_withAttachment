@@ -6,11 +6,6 @@ const bodyParser = require("body-parser");
 const { validate } = require("email-validator");
 const fs = require("fs");
 
-const reportFilePath = __dirname + "/email_report.csv";
-const reportFileStream = fs.createWriteStream(reportFilePath);
-
-reportFileStream.write("Email,Status\n"); // Header for CSV
-
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -26,6 +21,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post("/mail", async (req, res, next) => {
   try {
+    // Generate a unique filename using the current timestamp
+    const timestamp = new Date().toISOString().replace(/:/g, "-");
+    const reportFilePath = __dirname + `/email_report_${timestamp}.csv`;
+
+    const reportFileStream = fs.createWriteStream(reportFilePath);
+    reportFileStream.write("Email,Status\n"); // Header for CSV
+
     const emails = req.body.email.split(",").map((email) => email.trim());
     const cc = req.body.cc;
     const message = req.body.message;
@@ -58,12 +60,10 @@ app.post("/mail", async (req, res, next) => {
               __dirname +
               "/attachment/certified copy of order 7-8-2014 Email.pdf",
           },
-
           {
             filename: "COURT ORDER 21-09-2015 Email.pdf",
             path: __dirname + "/attachment/COURT ORDER 21-09-2015 Email.pdf",
           },
-
           {
             filename: "ROC certificate Email.pdf",
             path: __dirname + "/attachment/ROC certificate Email.pdf",
