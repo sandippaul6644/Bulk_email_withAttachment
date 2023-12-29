@@ -6,6 +6,11 @@ const bodyParser = require("body-parser");
 const { validate } = require("email-validator");
 const fs = require("fs");
 
+const reportFilePath = __dirname + "/email_report.csv";
+const reportFileStream = fs.createWriteStream(reportFilePath);
+
+reportFileStream.write("Email,Status\n"); // Header for CSV
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -25,17 +30,17 @@ app.post("/mail", async (req, res, next) => {
     const cc = req.body.cc;
     const message = req.body.message;
     const subject = req.body.subject;
-    const name = req.body.name;
     const company = req.body.company;
 
     for (const email of emails) {
       if (!validate(email)) {
         console.error(`Invalid email: ${email}`);
+        reportFileStream.write(`${email},false\n`);
         continue;
       }
 
       let mailOptions = {
-        from: name,
+        from: `"KHODAY INDIA LIMITED" <${creds.auth.user}>`, // Static "from" name
         to: email,
         cc: cc,
         subject: subject,
@@ -66,11 +71,18 @@ app.post("/mail", async (req, res, next) => {
         ],
       };
 
-      await sendMail(mailOptions);
+      try {
+        await sendMail(mailOptions);
+        reportFileStream.write(`${email},success\n`);
+      } catch (error) {
+        console.error(`Failed to send email to ${email}:`, error);
+        reportFileStream.write(`${email},false\n`);
+      }
     }
 
     res.json({
       status: "success",
+      reportFilePath: reportFilePath,
     });
   } catch (error) {
     res.json({
